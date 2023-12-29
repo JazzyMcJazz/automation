@@ -9,7 +9,7 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
-if [ "${EUID}" -eq 0 ]; then
+if [ "${EUID}" = "0" ]; then
     read -p "Enter new username: " USERNAME
     useradd --create-home --shell "/bin/bash" --groups sudo "${USERNAME}"
     # Create SSH directory for sudo user
