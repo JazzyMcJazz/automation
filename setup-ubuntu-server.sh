@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+set -eo pipefail
 
 USERNAME="${USER}"
 
@@ -9,7 +9,7 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
-if [ "${EUID}" = "0" ]; then
+if [ ! -n "${SUDO_USER}" ]; then
     read -p "Enter new username: " USERNAME
     useradd --create-home --shell "/bin/bash" --groups sudo "${USERNAME}"
     # Create SSH directory for sudo user
@@ -21,6 +21,8 @@ if [ "${EUID}" = "0" ]; then
     chmod 0600 "${home_directory}/.ssh/authorized_keys"
     chown --recursive "${USERNAME}":"${USERNAME}" "${home_directory}/.ssh"
 fi
+
+set -u
 
 # Check whether the user wanted to disable sudo password
 read -p "Disable sudo password for ${USERNAME}? (y/n): " -n 1 -r DISABLE_SUDO_PASSWORD
