@@ -1,7 +1,9 @@
 #!/bin/bash
 set -eo pipefail
 
-USERNAME="${USER}"
+USERNAME="$(whoami)"
+echo "Username: ${USERNAME}"
+exit 0
 HOME_DIR="$(eval echo ~${USERNAME})"
 
 # Check if the script is running as root or with sudo
@@ -21,6 +23,8 @@ if [ ! -n "${SUDO_USER}" ]; then
     chmod 0700 "${HOME_DIR}/.ssh"
     chmod 0600 "${HOME_DIR}/.ssh/authorized_keys"
     chown --recursive "${USERNAME}":"${USERNAME}" "${HOME_DIR}/.ssh"
+else
+    USERNAME="${SUDO_USER}"
 fi
 
 set -u
