@@ -1,27 +1,32 @@
 #!/bin/bash
 set -euo pipefail
 
-# Add sudo user and grant privileges
-read -p "Enter username: " USERNAME
-useradd --create-home --shell "/bin/bash" --groups sudo "${USERNAME}"
+USERNAME="${USER}"
+
+# Check if the script is running as root or with sudo
+if [ "$(id -u)" != "0" ]; then
+    echo "Error: This script must be run as root or with sudo privileges."
+    exit 1
+fi
+
+if [ "${EUID}" -eq 0 ]; then
+    read -p "Enter new username: " USERNAME
+    useradd --create-home --shell "/bin/bash" --groups sudo "${USERNAME}"
+    # Create SSH directory for sudo user
+    home_directory="$(eval echo ~${USERNAME})"
+    mkdir --parents "${home_directory}/.ssh"
+    cp /root/.ssh/authorized_keys "${home_directory}/.ssh"
+    # Adjust SSH configuration ownership and permissions
+    chmod 0700 "${home_directory}/.ssh"
+    chmod 0600 "${home_directory}/.ssh/authorized_keys"
+    chown --recursive "${USERNAME}":"${USERNAME}" "${home_directory}/.ssh"
+fi
 
 # Check whether the user wanted to disable sudo password
 read -p "Disable sudo password for ${USERNAME}? (y/n): " -n 1 -r DISABLE_SUDO_PASSWORD
 if [ "${DISABLE_SUDO_PASSWORD}" = "y" ]; then
     echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> "/etc/sudoers.d/${USERNAME}"
 fi
-
-# Create SSH directory for sudo user
-home_directory="$(eval echo ~${USERNAME})"
-mkdir --parents "${home_directory}/.ssh"
-
-# Copy `authorized_keys` file from root if requested
-cp /root/.ssh/authorized_keys "${home_directory}/.ssh"
-
-# Adjust SSH configuration ownership and permissions
-chmod 0700 "${home_directory}/.ssh"
-chmod 0600 "${home_directory}/.ssh/authorized_keys"
-chown --recursive "${USERNAME}":"${USERNAME}" "${home_directory}/.ssh"
 
 # Disable root and sudo users SSH login with password
 sed --in-place 's/^PermitRootLogin.*/PermitRootLogin prohibit-password/g' /etc/ssh/sshd_config
