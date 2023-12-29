@@ -2,6 +2,7 @@
 set -eo pipefail
 
 USERNAME="${USER}"
+HOME_DIR="$(eval echo ~${USERNAME})"
 
 # Check if the script is running as root or with sudo
 if [ "$(id -u)" != "0" ]; then
@@ -13,13 +14,13 @@ if [ ! -n "${SUDO_USER}" ]; then
     read -p "Enter new username: " USERNAME
     useradd --create-home --shell "/bin/bash" --groups sudo "${USERNAME}"
     # Create SSH directory for sudo user
-    home_directory="$(eval echo ~${USERNAME})"
-    mkdir --parents "${home_directory}/.ssh"
-    cp /root/.ssh/authorized_keys "${home_directory}/.ssh"
+    HOME_DIR="$(eval echo ~${USERNAME})"
+    mkdir --parents "${HOME_DIR}/.ssh"
+    cp /root/.ssh/authorized_keys "${HOME_DIR}/.ssh"
     # Adjust SSH configuration ownership and permissions
-    chmod 0700 "${home_directory}/.ssh"
-    chmod 0600 "${home_directory}/.ssh/authorized_keys"
-    chown --recursive "${USERNAME}":"${USERNAME}" "${home_directory}/.ssh"
+    chmod 0700 "${HOME_DIR}/.ssh"
+    chmod 0600 "${HOME_DIR}/.ssh/authorized_keys"
+    chown --recursive "${USERNAME}":"${USERNAME}" "${HOME_DIR}/.ssh"
 fi
 
 set -u
@@ -53,8 +54,8 @@ mv micro /usr/local/bin
 usermod -aG docker $USERNAME
 
 # Copy .bashrc and .bash_aliases
-cp .bashrc "${home_directory}"
-cp .bash_aliases "${home_directory}"
+cp .bashrc "${HOME_DIR}"
+cp .bash_aliases "${HOME_DIR}"
 
 # Add exception for SSH and then enable UFW firewall
 ufw allow OpenSSH
